@@ -2,8 +2,6 @@ import datetime
 from pathlib import Path
 
 import mlflow
-from mlflow import log_metric, log_param
-
 import whynot as wn
 from causal_rl import ppo, vpg
 from causal_rl.common import compute_causal_factor1, plot_agent_behaviors
@@ -12,22 +10,26 @@ from causal_rl.common import NoTreatmentPolicy, RandomPolicy, MaxTreatmentPolicy
 # Set the tracking URI for mlflow to a local directory where you have write permissions
 mlflow.set_tracking_uri("file:/Users/aymennasri/mlflow_tracking")
 
+# Function to log parameters and metrics to mlflow with unique run_name
+def log_to_mlflow(run_name, params, metrics):
+    with mlflow.start_run(run_name=run_name):
+        for key, value in params.items():
+            mlflow.log_param(key, value)
+        for key, value in metrics.items():
+            mlflow.log_metric(key, value)
+
+# Create the environment
 env = wn.gym.make("HIV-v0")
 
+# Create directories for logs and checkpoints
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 checkpoints_path = log_dir.joinpath("checkpoints")
 checkpoints_path.mkdir(parents=True, exist_ok=True)
 
+# Constants for training
 EPOCHS = 20
 EPISODES_PER_EPOCH = 16
-
-# Function to log parameters and metrics to mlflow
-def log_to_mlflow(params, metrics):
-    for key, value in params.items():
-        log_param(key, value)
-    for key, value in metrics.items():
-        log_metric(key, value)
 
 # Training and logging VPG model
 vpg_model = vpg.VPG(env)
@@ -36,7 +38,8 @@ for epoch in range(EPOCHS):
         # Perform training steps here
         # Replace with actual training logic
         train_stats = {}  # Example statistics; replace with actual values
-        log_to_mlflow({"epoch": epoch, "episode": episode}, train_stats)
+        run_name = f"VPG_epoch_{epoch}_episode_{episode}"
+        log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
 
 # Saving VPG model
 model_name = f"vpg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
