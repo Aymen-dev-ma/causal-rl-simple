@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/aymennasri/Documents/GitHub/causal-rl-simple/mlruns/947775726419266677/f0551320401d40868887bad1b1607123/artifacts
+end_time: 1721329275276
+entry_point_name: ''
+experiment_id: '947775726419266677'
+lifecycle_stage: active
+run_id: f0551320401d40868887bad1b1607123
+run_name: respected-fish-977
+run_uuid: f0551320401d40868887bad1b1607123
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721329275223
+status: 4
+tags: []
+user_id: aymennasri
