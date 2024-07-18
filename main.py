@@ -1,6 +1,5 @@
 import datetime
 from pathlib import Path
-
 import mlflow
 import whynot as wn
 from causal_rl import ppo, vpg
@@ -10,19 +9,20 @@ from causal_rl.common import NoTreatmentPolicy, RandomPolicy, MaxTreatmentPolicy
 # Set the tracking URI for mlflow to a local directory where you have write permissions
 mlflow.set_tracking_uri("file:/Users/aymennasri/mlflow_tracking")
 
+# Set the experiment name
+mlflow.set_experiment("causal_rl_experiment")
+
 # Function to log parameters and metrics to mlflow with unique run_name
 def log_to_mlflow(run_name, params, metrics):
-    try:
-        with mlflow.start_run(run_name=run_name):
-            for key, value in params.items():
-                mlflow.log_param(key, value)
-            for key, value in metrics.items():
-                mlflow.log_metric(key, value)
-    except Exception as e:
-        print(f"Error logging to MLflow: {e}")
+    with mlflow.start_run(run_name=run_name):
+        for key, value in params.items():
+            mlflow.log_param(key, value)
+        for key, value in metrics.items():
+            mlflow.log_metric(key, value)
 
 # Create the environment
 env = wn.gym.make("HIV-v0")
+print(f"Environment: {env}")
 
 # Create directories for logs and checkpoints
 log_dir = Path("logs")
@@ -36,51 +36,38 @@ EPISODES_PER_EPOCH = 16
 
 # Training and logging VPG model
 vpg_model = vpg.VPG(env)
+print("Starting training with VPG model")
+
 for epoch in range(EPOCHS):
     for episode in range(EPISODES_PER_EPOCH):
+        start_time = datetime.datetime.now()
         # Perform training steps here
         # Replace with actual training logic
         train_stats = {"reward": 0}  # Example statistics; replace with actual values
+        
+        # Log training statistics
         run_name = f"VPG_epoch_{epoch}_episode_{episode}"
         log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
+        
+        end_time = datetime.datetime.now()
+        print(f"Epoch {epoch}, Episode {episode} took {end_time - start_time}")
 
 # Saving VPG model
 model_name = f"vpg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
-model_path = checkpoints_path.joinpath(model_name)
-vpg_model.save(model_path)
-
-# Log the model artifact to MLflow
-with mlflow.start_run(run_name="vpg_model_artifact"):
-    mlflow.log_artifact(model_path)
+vpg_model.save(checkpoints_path.joinpath(model_name))
+print(f"Saved model parameters to {checkpoints_path.joinpath(model_name)}")
 
 # Repeat similar process for other models (causal_pg, ppo, causal_ppo)...
-# Example for ppo model
-ppo_model = ppo.PPO(env)
-for epoch in range(EPOCHS):
-    for episode in range(EPISODES_PER_EPOCH):
-        # Perform training steps here
-        # Replace with actual training logic
-        train_stats = {"reward": 0}  # Example statistics; replace with actual values
-        run_name = f"PPO_epoch_{epoch}_episode_{episode}"
-        log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
-
-# Saving PPO model
-ppo_model_name = f"ppo_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
-ppo_model_path = checkpoints_path.joinpath(ppo_model_name)
-ppo_model.save(ppo_model_path)
-
-# Log the PPO model artifact to MLflow
-with mlflow.start_run(run_name="ppo_model_artifact"):
-    mlflow.log_artifact(ppo_model_path)
 
 # Example for plotting agent behaviors
 agents = {
     "vpg": vpg_model,
-    "ppo": ppo_model,
     # Add other models here
 }
 
 for name, agent in agents.items():
+    print(f"Plotting behavior for {name}")
+    
     plot_agent_behaviors(
         {name: agent},
         env,
@@ -91,6 +78,7 @@ for name, agent in agents.items():
         ),
         show_plot=False,
     )
+    
     plot_agent_behaviors(
         {
             "random": RandomPolicy(),
@@ -108,6 +96,8 @@ for name, agent in agents.items():
     )
 
 # Example for plotting all agent behaviors together
+print("Plotting all agent behaviors together")
+
 plot_agent_behaviors(
     {
         "random": RandomPolicy(),
@@ -123,3 +113,5 @@ plot_agent_behaviors(
     ),
     show_plot=False,
 )
+
+print("Finished plotting all behaviors.")
