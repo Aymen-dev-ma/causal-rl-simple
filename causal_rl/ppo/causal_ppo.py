@@ -1,9 +1,3 @@
-"""
-Causal PPO
-Atharv Sonwane <atharvs.twm@gmail.com>
-Rishab Patra
-"""
-
 import torch
 from torch.nn import functional as F
 

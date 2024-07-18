@@ -1,11 +1,3 @@
-"""
-Causal Policy Gradient in pytorch
-Atharv Sonwane
-
-References:
-https://spinningup.openai.com/en/latest/algorithms/vpg.html
-"""
-
 import torch
 from torch.nn import functional as F
 

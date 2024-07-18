@@ -1,11 +1,3 @@
-"""
-Policy Gradient in pytorch
-Atharv Sonwane
-
-References:
-https://spinningup.openai.com/en/latest/algorithms/vpg.html
-"""
-
 import datetime
 import time
 from pathlib import Path

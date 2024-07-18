@@ -1,8 +1,3 @@
-"""
-PPO
-Atharv Sonwane <atharvs.twm@gmail.com>
-"""
-
 import datetime
 from pathlib import Path
 
