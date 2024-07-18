@@ -7,16 +7,19 @@ from causal_rl import ppo, vpg
 from causal_rl.common import compute_causal_factor1, plot_agent_behaviors
 from causal_rl.common import NoTreatmentPolicy, RandomPolicy, MaxTreatmentPolicy
 
-# Set the tracking URI for MLflow to a local directory where you have write permissions
+# Set the tracking URI for mlflow to a local directory where you have write permissions
 mlflow.set_tracking_uri("file:/Users/aymennasri/mlflow_tracking")
 
-# Function to log parameters and metrics to MLflow with unique run_name
+# Function to log parameters and metrics to mlflow with unique run_name
 def log_to_mlflow(run_name, params, metrics):
-    with mlflow.start_run(run_name=run_name):
-        for key, value in params.items():
-            mlflow.log_param(key, value)
-        for key, value in metrics.items():
-            mlflow.log_metric(key, value)
+    try:
+        with mlflow.start_run(run_name=run_name):
+            for key, value in params.items():
+                mlflow.log_param(key, value)
+            for key, value in metrics.items():
+                mlflow.log_metric(key, value)
+    except Exception as e:
+        print(f"Error logging to MLflow: {e}")
 
 # Create the environment
 env = wn.gym.make("HIV-v0")
@@ -37,24 +40,47 @@ for epoch in range(EPOCHS):
     for episode in range(EPISODES_PER_EPOCH):
         # Perform training steps here
         # Replace with actual training logic
-        train_stats = {"reward": 0.0}  # Example statistics; replace with actual values
+        train_stats = {"reward": 0}  # Example statistics; replace with actual values
         run_name = f"VPG_epoch_{epoch}_episode_{episode}"
-        
-        # Log parameters and metrics to MLflow
         log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
 
-# Save the VPG model
+# Saving VPG model
 model_name = f"vpg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
-vpg_model.save(checkpoints_path.joinpath(model_name))
+model_path = checkpoints_path.joinpath(model_name)
+vpg_model.save(model_path)
+
+# Log the model artifact to MLflow
+with mlflow.start_run(run_name="vpg_model_artifact"):
+    mlflow.log_artifact(model_path)
+
+# Repeat similar process for other models (causal_pg, ppo, causal_ppo)...
+# Example for ppo model
+ppo_model = ppo.PPO(env)
+for epoch in range(EPOCHS):
+    for episode in range(EPISODES_PER_EPOCH):
+        # Perform training steps here
+        # Replace with actual training logic
+        train_stats = {"reward": 0}  # Example statistics; replace with actual values
+        run_name = f"PPO_epoch_{epoch}_episode_{episode}"
+        log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
+
+# Saving PPO model
+ppo_model_name = f"ppo_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
+ppo_model_path = checkpoints_path.joinpath(ppo_model_name)
+ppo_model.save(ppo_model_path)
+
+# Log the PPO model artifact to MLflow
+with mlflow.start_run(run_name="ppo_model_artifact"):
+    mlflow.log_artifact(ppo_model_path)
 
 # Example for plotting agent behaviors
 agents = {
     "vpg": vpg_model,
-    # Add other models here if applicable
+    "ppo": ppo_model,
+    # Add other models here
 }
 
 for name, agent in agents.items():
-    # Plot and save individual agent behavior
     plot_agent_behaviors(
         {name: agent},
         env,
@@ -97,7 +123,3 @@ plot_agent_behaviors(
     ),
     show_plot=False,
 )
-
-# Log final model save path as an artifact
-with mlflow.start_run(run_name="final_model"):
-    mlflow.log_artifact(checkpoints_path.joinpath(model_name))
