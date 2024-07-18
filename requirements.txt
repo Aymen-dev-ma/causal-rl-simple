@@ -1,4 +1,8 @@
 torch
 tensorboard
+whynot
 matplotlib
 numpy
+scikit-learn  # Replaced sklearn with scikit-learn
+
+
