@@ -1,75 +1,130 @@
 import datetime
 from pathlib import Path
-import mlflow
+
 import whynot as wn
-from causal_rl import ppo, vpg
+import mlflow
+import mlflow.keras
+from causal_rl import ppo, vpg  # noqa: F401
 from causal_rl.common import compute_causal_factor1, plot_agent_behaviors
 from causal_rl.common import NoTreatmentPolicy, RandomPolicy, MaxTreatmentPolicy
 
-# Set the tracking URI for mlflow to a local directory where you have write permissions
-mlflow.set_tracking_uri("file:/Users/aymennasri/mlflow_tracking")
+# Set up MLflow experiment
+mlflow.set_experiment("HIV-treatment-experiment")
 
-# Set the experiment name
-mlflow.set_experiment("causal_rl_experiment")
-
-# Function to log parameters and metrics to mlflow with unique run_name
-def log_to_mlflow(run_name, params, metrics):
-    with mlflow.start_run(run_name=run_name):
-        for key, value in params.items():
-            mlflow.log_param(key, value)
-        for key, value in metrics.items():
-            mlflow.log_metric(key, value)
-
-# Create the environment
 env = wn.gym.make("HIV-v0")
-print(f"Environment: {env}")
 
-# Create directories for logs and checkpoints
 log_dir = Path("logs")
 log_dir.mkdir(exist_ok=True)
 checkpoints_path = log_dir.joinpath("checkpoints")
 checkpoints_path.mkdir(parents=True, exist_ok=True)
 
-# Constants for training
 EPOCHS = 20
 EPISODES_PER_EPOCH = 16
 
-# Training and logging VPG model
-vpg_model = vpg.VPG(env)
-print("Starting training with VPG model")
+# VPG Model
+with mlflow.start_run(run_name="VPG"):
+    mlflow.log_param("epochs", EPOCHS)
+    mlflow.log_param("episodes_per_epoch", EPISODES_PER_EPOCH)
 
-for epoch in range(EPOCHS):
-    for episode in range(EPISODES_PER_EPOCH):
-        start_time = datetime.datetime.now()
-        # Perform training steps here
-        # Replace with actual training logic
-        train_stats = {"reward": 0}  # Example statistics; replace with actual values
-        
-        # Log training statistics
-        run_name = f"VPG_epoch_{epoch}_episode_{episode}"
-        log_to_mlflow(run_name, {"epoch": epoch, "episode": episode}, train_stats)
-        
-        end_time = datetime.datetime.now()
-        print(f"Epoch {epoch}, Episode {episode} took {end_time - start_time}")
+    vpg_model = vpg.VPG(env)
+    vpg_model.train(
+        epochs=EPOCHS,
+        episodes_per_epoch=EPISODES_PER_EPOCH,
+        log_dir=log_dir,
+        PLOT_REWARDS=True,
+        VERBOSE=True,
+        TENSORBOARD_LOG=True,
+        SHOW_PLOTS=False,
+    )
+    
+    model_path = checkpoints_path.joinpath(f"vpg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt")
+    vpg_model.save(model_path)
+    
+    # Log model
+    mlflow.log_artifact(model_path)
 
-# Saving VPG model
-model_name = f"vpg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt"
-vpg_model.save(checkpoints_path.joinpath(model_name))
-print(f"Saved model parameters to {checkpoints_path.joinpath(model_name)}")
+# Causal PG Model
+with mlflow.start_run(run_name="CausalPG"):
+    mlflow.log_param("epochs", EPOCHS)
+    mlflow.log_param("episodes_per_epoch", EPISODES_PER_EPOCH)
 
-# Repeat similar process for other models (causal_pg, ppo, causal_ppo)...
+    causal_pg_model = vpg.CausalPG(compute_causal_factor1, env)
+    causal_pg_model.train(
+        epochs=EPOCHS,
+        episodes_per_epoch=EPISODES_PER_EPOCH,
+        log_dir=log_dir,
+        PLOT_REWARDS=True,
+        VERBOSE=True,
+        TENSORBOARD_LOG=True,
+        SHOW_PLOTS=False,
+    )
+    
+    model_path = checkpoints_path.joinpath(f"causal_pg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt")
+    causal_pg_model.save(model_path)
+    
+    # Log model
+    mlflow.log_artifact(model_path)
 
-# Example for plotting agent behaviors
+# PPO Model
+with mlflow.start_run(run_name="PPO"):
+    mlflow.log_param("epochs", EPOCHS)
+    mlflow.log_param("episodes_per_epoch", EPISODES_PER_EPOCH)
+
+    ppo_model = ppo.PPO(env)
+    ppo_model.train(
+        epochs=EPOCHS,
+        episodes_per_epoch=EPISODES_PER_EPOCH,
+        log_dir=log_dir,
+        PLOT_REWARDS=True,
+        VERBOSE=True,
+        TENSORBOARD_LOG=True,
+        SHOW_PLOTS=False,
+    )
+    
+    model_path = checkpoints_path.joinpath(f"ppo_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt")
+    ppo_model.save(model_path)
+    
+    # Log model
+    mlflow.log_artifact(model_path)
+
+# Causal PPO Model
+with mlflow.start_run(run_name="CausalPPO"):
+    mlflow.log_param("epochs", EPOCHS)
+    mlflow.log_param("episodes_per_epoch", EPISODES_PER_EPOCH)
+
+    causal_ppo_model = ppo.CausalPPO(compute_causal_factor1, env)
+    causal_ppo_model.train(
+        epochs=EPOCHS,
+        episodes_per_epoch=EPISODES_PER_EPOCH,
+        log_dir=log_dir,
+        PLOT_REWARDS=True,
+        VERBOSE=True,
+        TENSORBOARD_LOG=True,
+        SHOW_PLOTS=False,
+    )
+    
+    model_path = checkpoints_path.joinpath(f"causal_pg_model_{datetime.datetime.now():%d%m%y%H%M%S}.pt")
+    causal_ppo_model.save(model_path)
+    
+    # Log model
+    mlflow.log_artifact(model_path)
+
+# Load models
+vpg_model.load("logs/12072020180721/VPG_HIV-v0.pt")
+causal_pg_model.load("logs/12072020190532/CausalPG_HIV-v0.pt")
+ppo_model.load("logs/12072020182111/PPO_HIV-v0.pt")
+causal_ppo_model.load("logs/12072020183315/CausalPPO_HIV-v0.pt")
+
 agents = {
     "vpg": vpg_model,
-    # Add other models here
+    "causal_pg": causal_pg_model,
+    "ppo": ppo_model,
+    "causal_ppo": causal_ppo_model,
 }
 
-for name, agent in agents.items():
-    print(f"Plotting behavior for {name}")
-    
+for name, a in agents.items():
     plot_agent_behaviors(
-        {name: agent},
+        {name: a},
         env,
         state_names=wn.hiv.State.variable_names(),
         max_timesteps=100,
@@ -78,13 +133,12 @@ for name, agent in agents.items():
         ),
         show_plot=False,
     )
-    
     plot_agent_behaviors(
         {
             "random": RandomPolicy(),
             "max": MaxTreatmentPolicy(),
             "none": NoTreatmentPolicy(),
-            name: agent,
+            name: a,
         },
         env,
         state_names=wn.hiv.State.variable_names(),
@@ -95,15 +149,15 @@ for name, agent in agents.items():
         show_plot=False,
     )
 
-# Example for plotting all agent behaviors together
-print("Plotting all agent behaviors together")
-
 plot_agent_behaviors(
     {
         "random": RandomPolicy(),
         "max": MaxTreatmentPolicy(),
         "none": NoTreatmentPolicy(),
-        **agents,  # Include all trained agents
+        "vpg": vpg_model,
+        "causal_pg": causal_pg_model,
+        "ppo": ppo_model,
+        "causal_ppo": causal_ppo_model,
     },
     env,
     state_names=wn.hiv.State.variable_names(),
@@ -113,5 +167,3 @@ plot_agent_behaviors(
     ),
     show_plot=False,
 )
-
-print("Finished plotting all behaviors.")

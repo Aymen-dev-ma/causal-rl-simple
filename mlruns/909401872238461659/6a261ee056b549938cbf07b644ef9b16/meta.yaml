@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/aymennasri/Documents/GitHub/causal-rl-simple/mlruns/909401872238461659/6a261ee056b549938cbf07b644ef9b16/artifacts
+end_time: 1721331303896
+entry_point_name: ''
+experiment_id: '909401872238461659'
+lifecycle_stage: active
+run_id: 6a261ee056b549938cbf07b644ef9b16
+run_name: VPG_epoch_12_episode_5
+run_uuid: 6a261ee056b549938cbf07b644ef9b16
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721331303869
+status: 3
+tags: []
+user_id: aymennasri

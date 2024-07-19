@@ -1,0 +1,16 @@
+artifact_uri: file:///Users/aymennasri/Documents/GitHub/causal-rl-simple/mlruns/427061567669945449/db55004f1d4649c1afa38d6a31a0d723/artifacts
+deleted_time: 1721331167625
+end_time: 1721329474152
+entry_point_name: ''
+experiment_id: '427061567669945449'
+lifecycle_stage: deleted
+run_id: db55004f1d4649c1afa38d6a31a0d723
+run_name: mercurial-lamb-650
+run_uuid: db55004f1d4649c1afa38d6a31a0d723
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1721329474122
+status: 3
+tags: []
+user_id: aymennasri
